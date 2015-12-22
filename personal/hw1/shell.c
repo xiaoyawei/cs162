@@ -15,8 +15,6 @@
 #include "process.h"
 #include "shell.h"
 
-/* Longest path length */
-static int longest_path_length = 1024;
 
 /* Whether the shell is connected to an actual terminal or not. */
 bool shell_is_interactive;
@@ -40,7 +38,7 @@ typedef struct fun_desc {
   char *doc;
 } fun_desc_t;
 
-fun_desc_t cmd_table[] = {
+static fun_desc_t cmd_table[] = {
   {cmd_help, "?", "show this help menu"},
   {cmd_quit, "quit", "quit the command shell"},
   {cmd_pwd, "pwd", "get current directory"},
@@ -51,7 +49,8 @@ fun_desc_t cmd_table[] = {
  * Prints a helpful description for the given command
  */
 int cmd_help(tok_t arg[]) {
-  for (int i = 0; i < sizeof(cmd_table) / sizeof(fun_desc_t); i++) {
+  int num_fun = sizeof(cmd_table) / sizeof(fun_desc_t);
+  for (int i = 0; i < num_fun; i++) {
     printf("%s - %s\n", cmd_table[i].cmd, cmd_table[i].doc);
   }
   return 1;
@@ -69,7 +68,7 @@ int cmd_quit(tok_t arg[]) {
  * Get current directory
  */
 int cmd_pwd(tok_t arg[]) { 
-  char cwd[longest_path_length]; 
+  char cwd[LONGEST_PATH_LENGTH]; 
   if (getcwd(cwd, sizeof(cwd)) != NULL) { 
     printf("%s\n", cwd); 
   } else { 
@@ -79,17 +78,36 @@ int cmd_pwd(tok_t arg[]) {
 }
 
 /**
- * Get current directory
+ * Change current directory
  */
 int cmd_cd(tok_t arg[]) { 
-  if (chdir(arg[0])) { 
+  if (arg[0] && chdir(arg[0])) { 
     perror("directory already exists"); 
   }
   return 1;
 }
 
+/**
+ * Execute a specified program
+ */
+int sys_call(tok_t arg[]) {
+  switch (fork()) {
+    case -1:
+      perror("Error program calling");
+      break;
+    case 0:
+      execv(arg[0], arg);
+      exit(0);
+    default:
+      wait(NULL);
+      break;
+  }
+  return 1;
+}
+
 int lookup(char cmd[]) {
-  for (int i = 0; i < sizeof(cmd_table) / sizeof(fun_desc_t); i++) {
+  int num_fun = sizeof(cmd_table) / sizeof(fun_desc_t);
+  for (int i = 0; i < num_fun; i++) {
     if (cmd && (strcmp(cmd_table[i].cmd, cmd) == 0)) return i;
   }
   return -1;
@@ -136,9 +154,11 @@ int shell(int argc, char *argv[]) {
     if (fundex >= 0) {
       cmd_table[fundex].fun(&tokens[1]);
     } else {
-      /* REPLACE this to run commands as programs. */
-      fprintf(stdout, "This shell doesn't know how to run programs.\n");
+        /* Execute the specified program */
+      sys_call(tokens);
     }
+    free(input_bytes);
+    free_toks(tokens);
 
     if (shell_is_interactive) { 
       /* Please only print shell prompts when standard input is not a tty */

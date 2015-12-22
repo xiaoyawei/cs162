@@ -13,12 +13,14 @@ char *freadln(FILE *ifile) {
   char *r = NULL;
   int len;
   char *s = fgets((char *)line, MAXLINE, ifile);
-  if (!s)
+  if (!s) {
     return s;
-  len = strlen(s) + 1;
-  r = malloc(len);
-  strncpy(r, s, len);
-  return r;
+  } else { 
+    len = (int) strlen(s) + 1;
+    r = (char*) malloc((unsigned) len);
+    strncpy(r, s, (unsigned) len);
+    return r;
+  } 
 }
 
 /**

@@ -17,7 +17,7 @@ tok_t *get_toks(char *line) {
   int i;
   char *c;
 
-  tok_t *toks = malloc(MAXTOKS * sizeof(tok_t));
+  tok_t *toks = (tok_t*) malloc(MAXTOKS * sizeof(tok_t));
 
   /** Intializes an empty token array */
   for (i = 0; i < MAXTOKS; i++) toks[i] = NULL;

@@ -6,6 +6,9 @@
 #include <sys/types.h>
 #include "parse.h" 
 
+/* Longest path length */
+#define LONGEST_PATH_LENGTH 1024
+
 /* Whether the shell is connected to an actual terminal or not. */
 extern bool shell_is_interactive;
 
@@ -24,5 +27,7 @@ int cmd_quit(tok_t arg[]);
 int cmd_help(tok_t arg[]);
 int cmd_pwd(tok_t arg[]); 
 int cmd_cd(tok_t arg[]);
+
+int sys_call(tok_t arg[]);
 
 #endif
