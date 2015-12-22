@@ -15,6 +15,9 @@
 #include "process.h"
 #include "shell.h"
 
+/* Longest path length */
+static int longest_path_length = 1024;
+
 /* Whether the shell is connected to an actual terminal or not. */
 bool shell_is_interactive;
 
@@ -26,9 +29,6 @@ struct termios shell_tmodes;
 
 /* Process group id for the shell */
 pid_t shell_pgid;
-
-int cmd_quit(tok_t arg[]);
-int cmd_help(tok_t arg[]);
 
 /* Built-in command functions take token array (see parse.h) and return int */
 typedef int cmd_fun_t(tok_t args[]);
@@ -43,6 +43,8 @@ typedef struct fun_desc {
 fun_desc_t cmd_table[] = {
   {cmd_help, "?", "show this help menu"},
   {cmd_quit, "quit", "quit the command shell"},
+  {cmd_pwd, "pwd", "get current directory"},
+  {cmd_cd, "cd", "change curent directory"},
 };
 
 /**
@@ -64,8 +66,28 @@ int cmd_quit(tok_t arg[]) {
 }
 
 /**
- * Looks up the built-in command, if it exists.
+ * Get current directory
  */
+int cmd_pwd(tok_t arg[]) { 
+  char cwd[longest_path_length]; 
+  if (getcwd(cwd, sizeof(cwd)) != NULL) { 
+    printf("%s\n", cwd); 
+  } else { 
+    perror("getcwd() error"); 
+  } 
+  return 1;
+}
+
+/**
+ * Get current directory
+ */
+int cmd_cd(tok_t arg[]) { 
+  if (chdir(arg[0])) { 
+    perror("directory already exists"); 
+  }
+  return 1;
+}
+
 int lookup(char cmd[]) {
   for (int i = 0; i < sizeof(cmd_table) / sizeof(fun_desc_t); i++) {
     if (cmd && (strcmp(cmd_table[i].cmd, cmd) == 0)) return i;
@@ -103,9 +125,10 @@ int shell(int argc, char *argv[]) {
 
   init_shell();
 
-  if (shell_is_interactive)
+  if (shell_is_interactive) { 
     /* Please only print shell prompts when standard input is not a tty */
     fprintf(stdout, "%d: ", line_num);
+  }
 
   while ((input_bytes = freadln(stdin))) {
     tokens = get_toks(input_bytes);
@@ -117,9 +140,10 @@ int shell(int argc, char *argv[]) {
       fprintf(stdout, "This shell doesn't know how to run programs.\n");
     }
 
-    if (shell_is_interactive)
+    if (shell_is_interactive) { 
       /* Please only print shell prompts when standard input is not a tty */
       fprintf(stdout, "%d: ", ++line_num);
+    }
   }
 
   return 0;
