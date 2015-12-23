@@ -1,4 +1,4 @@
-SRCS=main.c shell.c process.c io.c parse.c
+SRCS=main.c shell.c process.c io.c parse.c utilities.c
 EXECUTABLES=shell
 
 CC=gcc

@@ -14,7 +14,7 @@
 #include "parse.h"
 #include "process.h"
 #include "shell.h"
-
+#include "utilities.h" 
 
 /* Whether the shell is connected to an actual terminal or not. */
 bool shell_is_interactive;
@@ -93,11 +93,12 @@ int cmd_cd(tok_t arg[]) {
 int sys_call(tok_t arg[]) {
   switch (fork()) {
     case -1:
-      perror("Error program calling");
+      perror("Error in creating a new process");
       break;
     case 0:
-      execv(arg[0], arg);
-      exit(0);
+      sys_call_helper(arg);
+      perror("Command not found");
+      exit(-1);
     default:
       wait(NULL);
       break;
