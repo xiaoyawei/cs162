@@ -100,3 +100,16 @@ void child_signal_setup() {
   signal(SIGTTIN, SIG_DFL); 
   signal(SIGTTOU, SIG_DFL); 
 }
+
+int has_background_label(tok_t arg[]) {
+  int index = 0;
+  while (arg[index + 1] != NULL) {
+    ++index; 
+  }
+  if (strcmp(arg[index], "&")) {
+    return 0; 
+  } else {
+    arg[index] = NULL;
+    return 1;
+  }
+}

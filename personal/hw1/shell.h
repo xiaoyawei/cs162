@@ -27,6 +27,7 @@ int cmd_quit(tok_t arg[]);
 int cmd_help(tok_t arg[]);
 int cmd_pwd(tok_t arg[]); 
 int cmd_cd(tok_t arg[]);
+int cmd_wait(tok_t arg[]);
 
 int sys_call(tok_t arg[]);
 

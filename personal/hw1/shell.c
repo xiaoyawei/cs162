@@ -43,6 +43,7 @@ static fun_desc_t cmd_table[] = {
   {cmd_quit, "quit", "quit the command shell"},
   {cmd_pwd, "pwd", "get current directory"},
   {cmd_cd, "cd", "change curent directory"},
+  {cmd_wait, "wait", "wait until all background processes have terminated"},
 };
 
 /**
@@ -88,10 +89,23 @@ int cmd_cd(tok_t arg[]) {
 }
 
 /**
+ * Wait until all background processes have terminated
+ */
+int cmd_wait(tok_t arg[]) {
+  while (waitpid(-1, NULL, 0)) {
+    if (errno == ECHILD) {
+      break;
+    } 
+  }
+  return 1;
+}
+
+/**
  * Execute a specified program
  */
 int sys_call(tok_t arg[]) {
   pid_t cpid;
+  int run_in_background;
   switch (cpid = fork()) {
     case -1:
       perror("Error in creating a new process");
@@ -101,9 +115,13 @@ int sys_call(tok_t arg[]) {
       perror("Command not found");
       exit(-1);
     default:
-      /* wait(NULL); */
-      child_tmodes = shell_tmodes;
-      put_process_in_foreground(cpid, 0, &child_tmodes);
+      run_in_background = has_background_label(arg);
+      if (run_in_background) {
+        put_process_in_background(cpid, 0); 
+      } else {
+        child_tmodes = shell_tmodes;
+        put_process_in_foreground(cpid, 0, &child_tmodes);
+      }
       break;
   }
   return 1;
