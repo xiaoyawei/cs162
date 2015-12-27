@@ -3,10 +3,17 @@
 #include <string.h> 
 #include <stdio.h> 
 #include <fcntl.h> 
+#include <signal.h>
 
 #include "utilities.h" 
+#include "shell.h"
+#include "process.h"
 
 int sys_call_helper(tok_t arg[]) {
+  child_signal_setup();
+  if (setpgid(0, 0) != 0) {
+    perror("setpgid(0, pid)"); 
+  }
   int default_input = -1, default_output = -1;
   io_redirect(arg, &default_input, &default_output);
   execv(arg[0], arg);
@@ -72,4 +79,24 @@ void file_close(int input, int output) {
     close(output);
   }
   perror("Fail opening a file");
+}
+
+void parent_signal_setup() {
+  signal(SIGINT, SIG_IGN);
+  signal(SIGQUIT, SIG_IGN);
+  signal(SIGTERM, SIG_IGN);
+  signal(SIGTSTP, SIG_IGN);
+  signal(SIGCONT, SIG_IGN);
+  signal(SIGTTIN, SIG_IGN);
+  signal(SIGTTOU, SIG_IGN);
+}
+
+void child_signal_setup() {
+  signal(SIGINT, SIG_DFL);
+  signal(SIGQUIT, SIG_DFL);
+  signal(SIGTERM, SIG_DFL);
+  signal(SIGTSTP, SIG_DFL); 
+  signal(SIGCONT, SIG_DFL); 
+  signal(SIGTTIN, SIG_DFL); 
+  signal(SIGTTOU, SIG_DFL); 
 }

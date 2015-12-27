@@ -16,7 +16,7 @@ extern bool shell_is_interactive;
 extern int shell_terminal;
 
 /* Terminal mode settings for the shell */
-extern struct termios shell_tmodes;
+extern struct termios shell_tmodes, tmp;
 
 /* Process group id for the shell */
 extern pid_t shell_pgid;

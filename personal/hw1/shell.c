@@ -23,7 +23,7 @@ bool shell_is_interactive;
 int shell_terminal;
 
 /* Terminal mode settings for the shell */
-struct termios shell_tmodes;
+struct termios shell_tmodes, child_tmodes;
 
 /* Process group id for the shell */
 pid_t shell_pgid;
@@ -72,7 +72,7 @@ int cmd_pwd(tok_t arg[]) {
   if (getcwd(cwd, sizeof(cwd)) != NULL) { 
     printf("%s\n", cwd); 
   } else { 
-    perror("getcwd() error"); 
+    perror("getcwd()"); 
   } 
   return 1;
 }
@@ -91,7 +91,8 @@ int cmd_cd(tok_t arg[]) {
  * Execute a specified program
  */
 int sys_call(tok_t arg[]) {
-  switch (fork()) {
+  pid_t cpid;
+  switch (cpid = fork()) {
     case -1:
       perror("Error in creating a new process");
       break;
@@ -100,7 +101,9 @@ int sys_call(tok_t arg[]) {
       perror("Command not found");
       exit(-1);
     default:
-      wait(NULL);
+      /* wait(NULL); */
+      child_tmodes = shell_tmodes;
+      put_process_in_foreground(cpid, 0, &child_tmodes);
       break;
   }
   return 1;
@@ -124,8 +127,9 @@ void init_shell() {
 
   if(shell_is_interactive){
     /* Force the shell into foreground */
-    while(tcgetpgrp(shell_terminal) != (shell_pgid = getpgrp()))
+    while(tcgetpgrp(shell_terminal) != (shell_pgid = getpgrp())) {
       kill(-shell_pgid, SIGTTIN);
+    }
 
     /* Saves the shell's process id */
     shell_pgid = getpid();
@@ -134,6 +138,9 @@ void init_shell() {
     tcsetpgrp(shell_terminal, shell_pgid);
     tcgetattr(shell_terminal, &shell_tmodes);
   }
+
+  /* Set up signal handler for shell */
+  parent_signal_setup();
 }
 
 int shell(int argc, char *argv[]) {
